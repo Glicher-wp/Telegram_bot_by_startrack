@@ -12,8 +12,8 @@ from aiogram.types import ParseMode
 from aiogram.utils import executor
 from aiogram.utils.emoji import emojize
 
-from telegram_star_bot.config import TELEGRAM_TOKEN, twenty_min_past
-from telegram_star_bot.yandex_api_connector import get_issues, get_latest_issues
+from config import TELEGRAM_TOKEN, twenty_min_past
+from yandex_api_connector import get_issues, get_latest_issues
 
 
 logger.add('logs.json', format='{time} {level} {message}',
