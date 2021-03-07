@@ -1,0 +1,5 @@
+aiogram==2.11.2
+emoji==1.2.0
+loguru==0.5.3
+pytest==6.2.2
+
