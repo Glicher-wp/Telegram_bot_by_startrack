@@ -1,6 +1,6 @@
 import asyncio
+from datetime import datetime
 from loguru import logger
-import os
 
 import aiogram.utils.markdown as md
 from aiogram import Bot, Dispatcher, types
@@ -8,12 +8,13 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram import exceptions as aioex
 from aiogram.types import ParseMode
 from aiogram.utils import executor
 from aiogram.utils.emoji import emojize
 
-from telegram_star_bot.config import TELEGRAM_TOKEN, twenty_min_past
-from telegram_star_bot.yandex_api_connector import get_issues, get_latest_issues
+from config import TELEGRAM_TOKEN, twenty_min_past, comfortable_format, time_remain, tz
+from yandex_api_connector import get_issues, get_latest_issues
 
 
 logger.add('logs.json', format='{time} {level} {message}',
@@ -23,10 +24,13 @@ if TELEGRAM_TOKEN is not None:
     try:
         bot = Bot(token=TELEGRAM_TOKEN)
         logger.info("Бот создан")
+    except aioex.ValidationError:
+        logger.exception("Использован невалидный токен/Такой токен не был зарегистрирован")
+        exit()
     except Exception as ex:
         logger.exception("Ошибка при создании бота")
         logger.exception(str(ex))
-
+        exit()
     # Создаем хранилище данных для бота.
     storage = MemoryStorage()
     try:
@@ -36,7 +40,7 @@ if TELEGRAM_TOKEN is not None:
         logger.exception("Ошибка при создании диспетчера")
         logger.exception(str(ex))
 elif TELEGRAM_TOKEN is None:
-    logger.warning("Был передан неверный токен. Завершаю работу программы")
+    logger.warning("Был передан токен с значанием None. Возможно, Неверно передана переменная окружения")
     exit()
 
 
@@ -62,14 +66,14 @@ async def cmd_start(message: types.Message, state: FSMContext):
     await Form.token.set()
 
     await message.reply(
-        "Приветствую!  Давай начнем. Для работы с твоим список задач мне потребуется твой токен" 
-        "в организации. Для того, чтобы его получить, необходимо перейти по этой ссылке из под нужного"
+        "Приветствую!  Давай начнем. Для работы с твоим список задач мне потребуется твой токен " 
+        "в организации. Для того, чтобы его получить, необходимо перейти по этой ссылке из под нужного "
         "пользователя и отправить мне сгенерированный там токен: "
         "https://oauth.yandex-team.ru/authorize?response_type=token&client_id=5f671d781aca402ab7460fde4050267b"
                         )
     await bot.send_message(message.chat.id,
-                           "Эта ссылка отправит тебя на страницу аутентификации Яндекса. Токен будет храниться внутри"
-                           "этог диалога. Если ты захочешь его удалить введи команду /cancel. Она отчистит токен и" 
+                           "Эта ссылка отправит тебя на страницу аутентификации Яндекса. Токен будет храниться внутри "
+                           "этог диалога. Если ты захочешь его удалить введи команду /cancel. Она отчистит токен и " 
                            "завершит диалог со мной."
                            )
 
@@ -236,7 +240,9 @@ async def send_issues(message: types.Message, tasks: list):
                             f'{emojize(":red_exclamation_mark:" * 3)}'),
                     md.text(f'*Наименование задачи*: {task["issue"]}'),
                     md.text(f'*Статус*: {task["status"]}'),
-                    md.text(f'{emojize(":fire:" * 3)}*Дедлайн*: {task["deadline"]}'),
+                    md.text(f'{emojize(":fire:" * 3)}'
+                            f'*Дедлайн*: '
+                            f'{datetime.strftime(task["deadline"].astimezone(tz), comfortable_format)}'),
                     sep='\n',
                 ),
                 parse_mode=ParseMode.MARKDOWN,
@@ -247,7 +253,8 @@ async def send_issues(message: types.Message, tasks: list):
                 md.text(
                     md.text(f'*Наименование задачи*: {task["issue"]}'),
                     md.text(f'*Статус*: {task["status"]}'),
-                    md.text(f'*Дедлайн*: {task["deadline"]}'),
+                    md.text(f'*Дедлайн*: {datetime.strftime(task["deadline"].astimezone(tz), comfortable_format)}'),
+                    md.text(f'*До сгорания осталось*: {time_remain(task["deadline"])}'),
                     sep='\n',
                 ),
                 parse_mode=ParseMode.MARKDOWN,

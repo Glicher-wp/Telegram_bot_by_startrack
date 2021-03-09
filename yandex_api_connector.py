@@ -2,7 +2,7 @@ from datetime import datetime
 from loguru import logger
 import requests
 from requests import exceptions
-from telegram_star_bot.config import api_url, issue_filter, twenty_min_past, time_format
+from config import api_url, issue_filter, twenty_min_past, time_format
 
 
 logger.add('logs.json', format='{time} {level} {message}',
@@ -68,7 +68,7 @@ def get_list_issues(list_of_issues: list):
             issue_dict = {
                             "issue": issue['summary'],
                             "status": issue['status']['display'],
-                            "deadline": issue['sla'][-1]['failAt'],
+                            "deadline": datetime.strptime(issue['sla'][-1]['failAt'], time_format),
                             "warnAt": datetime.strptime(issue['sla'][-1]['warnAt'], time_format),
                         }
             issues_list.append(issue_dict)
