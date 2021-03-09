@@ -13,6 +13,7 @@ from aiogram.types import ParseMode
 from aiogram.utils import executor
 from aiogram.utils.emoji import emojize
 
+
 from config import TELEGRAM_TOKEN, twenty_min_past, comfortable_format, time_remain, tz
 from yandex_api_connector import get_issues, get_latest_issues
 
