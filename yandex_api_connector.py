@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from loguru import logger
 import requests
 from requests import exceptions
-from config import api_url, issue_filter, twenty_min_past, time_format
+from config import api_url, issue_filter, twenty_min_past, time_format, tz
 
 
 logger.add('logs.json', format='{time} {level} {message}',
@@ -89,7 +89,10 @@ def filter_issues_by_time(list_of_issues: list):
     try:
         filtered_issues = list(filter(
             lambda x: (datetime.strptime(x['createdAt'], time_format) >= twenty_min_past or
-                       datetime.strptime(x['updatedAt'], time_format) >= twenty_min_past),
+                       datetime.strptime(x['updatedAt'], time_format) >= twenty_min_past) or
+                       datetime.now(tz) - timedelta(hours=4) <=
+                       datetime.strptime(x['sla'][-1]['failAt'], time_format) <=
+                       datetime.now(tz) - timedelta(minutes=210),
             list_of_issues
         ))
     except KeyError:

@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 from loguru import logger
 
 import aiogram.utils.markdown as md
@@ -66,6 +66,8 @@ async def cmd_start(message: types.Message, state: FSMContext):
         await cancel_handler(message, state)
     await Form.token.set()
 
+    markup = types.ReplyKeyboardRemove()
+
     await message.reply(
         "Приветствую!  Давай начнем. Для работы с твоим список задач мне потребуется твой токен " 
         "в организации. Для того, чтобы его получить, необходимо перейти по этой ссылке из под нужного "
@@ -75,7 +77,8 @@ async def cmd_start(message: types.Message, state: FSMContext):
     await bot.send_message(message.chat.id,
                            "Эта ссылка отправит тебя на страницу аутентификации Яндекса. Токен будет храниться внутри "
                            "этог диалога. Если ты захочешь его удалить введи команду /cancel. Она отчистит токен и " 
-                           "завершит диалог со мной."
+                           "завершит диалог со мной.",
+                           reply_markup=markup
                            )
 
 
@@ -94,7 +97,8 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     # Задаем доп. значения для ответа. Необходимо для двойной проверки цикла на выход из него.
     async with state.proxy() as data:
         data['answer'] = None
-    await message.reply("Алоха!(что означает 'привет' и 'пока' на гавайском)")
+    markup = types.ReplyKeyboardRemove()
+    await message.reply("Алоха!(что означает 'привет' и 'пока' на гавайском)", reply_markup=markup)
 
 
 @dp.message_handler(state='*', commands='status')
@@ -105,7 +109,7 @@ async def get_all_tasks(message: types.Message, state: FSMContext):
     # Проверяем, что пользователь уже передал email боу. Если нет, выкидываем предупреждение.
     current_state = await state.get_state()
     if current_state is None:
-        await message.reply("email адрес не был указан. Повторите запрос после указания email адреса")
+        await message.reply("token не был указан. Воспользуйся командой /start и после указания token повтори попытку.")
         return
     # получаем из state email.
     async with state.proxy() as data:
@@ -198,7 +202,8 @@ async def loop_request(message: types.Message, state: FSMContext):
             # Записываем ответ пользователя в соответствующий state.
             data['answer'] = message.text
         # Удаляем клавиатуру.
-        markup = types.ReplyKeyboardRemove()
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True, selective=True)
+        markup.add('/status', '/cancel')
         await bot.send_message(
                 message.chat.id,
                 "С этого момента, каждые 20 минут, ты будешь получать обновления, если таковые будут",
@@ -232,7 +237,7 @@ async def send_issues(message: types.Message, tasks: list):
     """
     # Парсим каждую задачу в списке
     for task in tasks:
-        if task['warnAt'] <= twenty_min_past:
+        if task['deadline'].astimezone(tz) - timedelta(hours=4) <= datetime.now(tz):
             await bot.send_message(
                 message.chat.id,
                 md.text(
@@ -244,6 +249,7 @@ async def send_issues(message: types.Message, tasks: list):
                     md.text(f'{emojize(":fire:" * 3)}'
                             f'*Дедлайн*: '
                             f'{datetime.strftime(task["deadline"].astimezone(tz), comfortable_format)}'),
+                    md.text(f'*До сгорания осталось*: {time_remain(task["deadline"])}'),
                     sep='\n',
                 ),
                 parse_mode=ParseMode.MARKDOWN,
