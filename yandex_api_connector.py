@@ -48,7 +48,14 @@ def get_user_issues(headers: dict):
     if res_issues.status_code == 200:
         # Переводим в формат json, чтобы легче было парсить
         response_issues = res_issues.json()
-        return response_issues
+        try:
+            for issue in response_issues:
+                sla_filter = list(filter(lambda x: (x['clockStatus'] == 'STARTED'), issue['sla']))
+                issue['sla'] = sla_filter
+            return response_issues
+        except KeyError:
+            logger.exception("Яндекс вернул json с невалидными ключами. Фмльтрация невозможна")
+            return None
     else:
         logger.warning(f"Сервер вернул плохой статус код:{res_issues.status_code}")
         logger.warning(res_issues.text)
@@ -89,10 +96,10 @@ def filter_issues_by_time(list_of_issues: list):
         filtered_issues = list(filter(
             lambda x: (
                 datetime.strptime(x['createdAt'], time_format) >= twenty_min_past or
-                datetime.strptime(x['updatedAt'], time_format) >= twenty_min_past) or
+                datetime.strptime(x['updatedAt'], time_format) >= twenty_min_past or
                 datetime.strptime(x['sla'][0]['failAt'], time_format) - timedelta(hours=4) <=
                 datetime.now(tz) <=
-                datetime.strptime(x['sla'][0]['failAt'], time_format) - timedelta(minutes=210),
+                datetime.strptime(x['sla'][0]['failAt'], time_format) - timedelta(minutes=210)),
             list_of_issues
         ))
     except KeyError:
