@@ -67,8 +67,8 @@ def get_list_issues(list_of_issues: list):
         try:
             issue_dict = {
                             "issue": issue['summary'],
-                            "deadline": datetime.strptime(issue['sla'][-1]['failAt'], time_format),
-                            "warnAt": datetime.strptime(issue['sla'][-1]['warnAt'], time_format),
+                            "deadline": datetime.strptime(issue['sla'][0]['failAt'], time_format),
+                            "warnAt": datetime.strptime(issue['sla'][0]['warnAt'], time_format),
                         }
             issues_list.append(issue_dict)
         except ValueError:
@@ -90,9 +90,9 @@ def filter_issues_by_time(list_of_issues: list):
             lambda x: (
                 datetime.strptime(x['createdAt'], time_format) >= twenty_min_past or
                 datetime.strptime(x['updatedAt'], time_format) >= twenty_min_past) or
-                datetime.strptime(x['sla'][-1]['failAt'], time_format) - timedelta(hours=4) <=
+                datetime.strptime(x['sla'][0]['failAt'], time_format) - timedelta(hours=4) <=
                 datetime.now(tz) <=
-                datetime.strptime(x['sla'][-1]['failAt'], time_format) - timedelta(minutes=210),
+                datetime.strptime(x['sla'][0]['failAt'], time_format) - timedelta(minutes=210),
             list_of_issues
         ))
     except KeyError:
