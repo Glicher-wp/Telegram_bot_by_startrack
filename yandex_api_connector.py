@@ -49,6 +49,7 @@ def get_user_issues(headers: dict):
         # Переводим в формат json, чтобы легче было парсить
         response_issues = res_issues.json()
         try:
+            # Фильтруем поле sla и оставляем только ту информацию, которая сейчас активна.
             for issue in response_issues:
                 sla_filter = list(filter(lambda x: (x['clockStatus'] == 'STARTED'), issue['sla']))
                 issue['sla'] = sla_filter
@@ -93,6 +94,9 @@ def filter_issues_by_time(list_of_issues: list):
     Функция фильтрует задачи по юзеру и времени и возвращает обновления за последние 20 миинут.
     """
     try:
+        # Фильтруем свежесозданные и обновленные таски, а так же те, которые сгорят через 4 часа,
+        # но не раньше 3.5 часов. Это нужно, чтобы в телеграм не приходили сообщения о горящих тасках
+        # каждые 20 минут.
         filtered_issues = list(filter(
             lambda x: (
                 datetime.strptime(x['createdAt'], time_format) >= twenty_min_past or
