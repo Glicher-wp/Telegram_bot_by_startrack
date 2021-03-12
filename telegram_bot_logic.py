@@ -222,8 +222,11 @@ async def loop_request(message: types.Message, state: FSMContext):
                 # Получаем список задач
                 tasks = get_latest_issues(data['token'])
                 # Проверяем, что список не пустой, тогда высылаем таски.
-                if len(tasks) > 0:
+                if len(tasks) == 0:
+                    pass
+                elif len(tasks) > 0:
                     await send_issues(message, tasks)
+
                 # Получаем задачи.
             await asyncio.sleep(1200)
         # Подчищаем стейты, если пользователь вышел из цикла.
@@ -245,7 +248,6 @@ async def send_issues(message: types.Message, tasks: list):
                             f'Эта задача в огне!'
                             f'{emojize(":red_exclamation_mark:" * 3)}'),
                     md.text(f'*Наименование задачи*: {task["issue"]}'),
-                    md.text(f'*Статус*: {task["status"]}'),
                     md.text(f'{emojize(":fire:" * 3)}'
                             f'*Дедлайн*: '
                             f'{datetime.strftime(task["deadline"].astimezone(tz), comfortable_format)}'),
@@ -259,7 +261,6 @@ async def send_issues(message: types.Message, tasks: list):
                 message.chat.id,
                 md.text(
                     md.text(f'*Наименование задачи*: {task["issue"]}'),
-                    md.text(f'*Статус*: {task["status"]}'),
                     md.text(f'*Дедлайн*: {datetime.strftime(task["deadline"].astimezone(tz), comfortable_format)}'),
                     md.text(f'*До сгорания осталось*: {time_remain(task["deadline"])}'),
                     sep='\n',

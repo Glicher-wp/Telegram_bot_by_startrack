@@ -31,6 +31,9 @@ def time_remain(fail_data: datetime.datetime):
     """
     Получает поле date-time парсит его и воз
     """
+    if fail_data.astimezone(tz) <= datetime.datetime.now(tz):
+        formated_time = "Все сгорело в синем пламени"
+        return formated_time
     time = fail_data.astimezone(tz) - datetime.datetime.now(tz)
     mm, ss = divmod(time.seconds, 60)
     hh, mm = divmod(mm, 60)

@@ -67,7 +67,6 @@ def get_list_issues(list_of_issues: list):
         try:
             issue_dict = {
                             "issue": issue['summary'],
-                            "status": issue['status']['display'],
                             "deadline": datetime.strptime(issue['sla'][-1]['failAt'], time_format),
                             "warnAt": datetime.strptime(issue['sla'][-1]['warnAt'], time_format),
                         }
@@ -88,11 +87,12 @@ def filter_issues_by_time(list_of_issues: list):
     """
     try:
         filtered_issues = list(filter(
-            lambda x: (datetime.strptime(x['createdAt'], time_format) >= twenty_min_past or
-                       datetime.strptime(x['updatedAt'], time_format) >= twenty_min_past) or
-                       datetime.now(tz) - timedelta(hours=4) <=
-                       datetime.strptime(x['sla'][-1]['failAt'], time_format) <=
-                       datetime.now(tz) - timedelta(minutes=210),
+            lambda x: (
+                datetime.strptime(x['createdAt'], time_format) >= twenty_min_past or
+                datetime.strptime(x['updatedAt'], time_format) >= twenty_min_past) or
+                datetime.strptime(x['sla'][-1]['failAt'], time_format) - timedelta(hours=4) <=
+                datetime.now(tz) <=
+                datetime.strptime(x['sla'][-1]['failAt'], time_format) - timedelta(minutes=210),
             list_of_issues
         ))
     except KeyError:
